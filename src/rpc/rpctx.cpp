@@ -285,7 +285,7 @@ Value createcontracttx(const Array& params, bool fHelp) {
 		throw runtime_error("in createcontracttx :addresss is error!\n");
 	}
 	EnsureWalletIsUnlocked();
-	std::shared_ptr<CTransaction> tx = make_shared<CTransaction>();
+	std::shared_ptr<CTransaction> tx = std::make_shared<CTransaction>();
 	{
 		//balance
 		CAccountViewCache view(*pAccountViewTip, true);
@@ -971,7 +971,7 @@ Value listapp(const Array& params, bool fHelp) {
 		script.push_back(Pair("description", HexStr(vmScript.ScriptExplain)));
 
 		if (showDetail)
-			script.push_back(Pair("scriptContent", HexStr(vScript.begin(), vScript.end())));
+			script.push_back(Pair("scriptContent", HexStr(vmScript.Rom.begin(), vmScript.Rom.end())));
 		arrayScript.push_back(script);
 		while (pScriptDBTip->GetScript(1, regId, vScript)) {
 			Object obj;
@@ -981,14 +981,50 @@ Value listapp(const Array& params, bool fHelp) {
 			CVmScript vmScript;
 			ds >> vmScript;
 			string strDes(vmScript.ScriptExplain.begin(), vmScript.ScriptExplain.end());
-			script.push_back(Pair("description", HexStr(vmScript.ScriptExplain)));
+			obj.push_back(Pair("description", HexStr(vmScript.ScriptExplain)));
 			if (showDetail)
-				obj.push_back(Pair("scriptContent", string(vScript.begin(), vScript.end())));
+				obj.push_back(Pair("scriptContent", HexStr(vmScript.Rom.begin(), vmScript.Rom.end())));
 			arrayScript.push_back(obj);
 		}
 	}
 
 	obj.push_back(Pair("listregedscript", arrayScript));
+	return obj;
+}
+
+Value getappinfo(const Array& params, bool fHelp) {
+	if (fHelp || params.size() != 1)
+	        throw runtime_error(
+	            "getappinfo ( \"scriptid\" )\n"
+	            "\nget app information.\n"
+	            "\nArguments:\n"
+	            "1. \"scriptid\"    (string). The script ID. \n"
+	            "\nget app information in the systems\n"
+				"\nExamples:\n" + HelpExampleCli("listapp", "123-1") + HelpExampleRpc("listapp", "123-1"));
+
+	string strRegId = params[0].get_str();
+	CRegID regid(strRegId);
+	if (regid.IsEmpty() == true) {
+		throw runtime_error("in getappinfo :scriptid size is error!\n");
+	}
+
+	if (!pScriptDBTip->HaveScript(regid)) {
+		throw runtime_error("in getappinfo :scriptid  is not exist!\n");
+	}
+
+	vector<unsigned char> vScript;
+	if (!pScriptDBTip->GetScript(regid, vScript)) {
+		throw JSONRPCError(RPC_DATABASE_ERROR, "get script error: cannot get registered script.");
+	}
+
+	Object obj;
+	obj.push_back(Pair("scriptId", regid.ToString()));
+	obj.push_back(Pair("scriptId2", HexStr(regid.GetVec6())));
+	CDataStream ds(vScript, SER_DISK, CLIENT_VERSION);
+	CVmScript vmScript;
+	ds >> vmScript;
+	obj.push_back(Pair("description", HexStr(vmScript.ScriptExplain)));
+	obj.push_back(Pair("scriptContent", HexStr(vmScript.Rom.begin(), vmScript.Rom.end())));
 	return obj;
 }
 
@@ -1369,7 +1405,7 @@ Value registaccounttxraw(const Array& params, bool fHelp) {
 		hight = params[3].get_int();
 	}
 
-	std::shared_ptr<CRegisterAccountTx> tx = make_shared<CRegisterAccountTx>(ukey, uminerkey, Fee, hight);
+	std::shared_ptr<CRegisterAccountTx> tx = std::make_shared<CRegisterAccountTx>(ukey, uminerkey, Fee, hight);
 	CDataStream ds(SER_DISK, CLIENT_VERSION);
 	std::shared_ptr<CBaseTransaction> pBaseTx = tx->GetNewInstance();
 	ds << pBaseTx;
@@ -1468,7 +1504,7 @@ Value createcontracttxraw(const Array& params, bool fHelp) {
 		height = params[5].get_int();
 	}
 
-	std::shared_ptr<CTransaction> tx = make_shared<CTransaction>(userid, appid, fee, amount, height, vcontract);
+	std::shared_ptr<CTransaction> tx = std::make_shared<CTransaction>(userid, appid, fee, amount, height, vcontract);
 
 	CDataStream ds(SER_DISK, CLIENT_VERSION);
 	std::shared_ptr<CBaseTransaction> pBaseTx = tx->GetNewInstance();
@@ -1589,7 +1625,7 @@ Value registerscripttxraw(const Array& params, bool fHelp) {
 		throw runtime_error(
 				tinyformat::format("registerscripttxraw :account id %s is not exist\n", mkeyId.ToAddress()));
 	};
-	std::shared_ptr<CRegisterAppTx> tx = make_shared<CRegisterAppTx>();
+	std::shared_ptr<CRegisterAppTx> tx = std::make_shared<CRegisterAppTx>();
 	tx.get()->regAcctId = GetUserId(keyid);
 	tx.get()->script = vscript;
 	tx.get()->llFees = fee;
@@ -1634,7 +1670,7 @@ Value sigstr(const Array& params, bool fHelp) {
 	Object obj;
 	switch (pBaseTx.get()->nTxType) {
 	case COMMON_TX: {
-		std::shared_ptr<CTransaction> tx = make_shared<CTransaction>(pBaseTx.get());
+		std::shared_ptr<CTransaction> tx = std::make_shared<CTransaction>(pBaseTx.get());
 		CKeyID keyid;
 		if (!view.GetKeyId(tx.get()->srcRegId, keyid)) {
 			throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "vaccountid have no key id");
@@ -1649,7 +1685,7 @@ Value sigstr(const Array& params, bool fHelp) {
 	}
 		break;
 	case REG_ACCT_TX: {
-		std::shared_ptr<CRegisterAccountTx> tx = make_shared<CRegisterAccountTx>(pBaseTx.get());
+		std::shared_ptr<CRegisterAccountTx> tx = std::make_shared<CRegisterAccountTx>(pBaseTx.get());
 		if (!pwalletMain->Sign(keyid, tx.get()->SignatureHash(), tx.get()->signature)) {
 			throw JSONRPCError(RPC_INVALID_PARAMETER, "Sign failed");
 		}
@@ -1660,7 +1696,7 @@ Value sigstr(const Array& params, bool fHelp) {
 	}
 		break;
 	case CONTRACT_TX: {
-		std::shared_ptr<CTransaction> tx = make_shared<CTransaction>(pBaseTx.get());
+		std::shared_ptr<CTransaction> tx = std::make_shared<CTransaction>(pBaseTx.get());
 		if (!pwalletMain->Sign(keyid, tx.get()->SignatureHash(), tx.get()->signature)) {
 			throw JSONRPCError(RPC_INVALID_PARAMETER, "Sign failed");
 		}
@@ -1673,7 +1709,7 @@ Value sigstr(const Array& params, bool fHelp) {
 	case REWARD_TX:
 		break;
 	case REG_APP_TX: {
-		std::shared_ptr<CRegisterAppTx> tx = make_shared<CRegisterAppTx>(pBaseTx.get());
+		std::shared_ptr<CRegisterAppTx> tx = std::make_shared<CRegisterAppTx>(pBaseTx.get());
 		if (!pwalletMain->Sign(keyid, tx.get()->SignatureHash(), tx.get()->signature)) {
 			throw JSONRPCError(RPC_INVALID_PARAMETER, "Sign failed");
 		}
@@ -1787,18 +1823,18 @@ Value getappaccinfo(const Array& params, bool fHelp) {
 		string addr = params[1].get_str();
 		key.assign(addr.c_str(), addr.c_str() + addr.length());
 	}
-	std::shared_ptr<CAppUserAccout> tem = make_shared<CAppUserAccout>();
+	std::shared_ptr<CAppUserAccout> tem = std::make_shared<CAppUserAccout>();
 	if(params.size() == 3 && 0 == params[2].get_int())
 	{
 
 		CScriptDBViewCache contractScriptTemp(*mempool.pScriptDBViewCache, true);
 		if (!contractScriptTemp.GetScriptAcc(script, key, *tem.get())) {
-			tem = make_shared<CAppUserAccout>(key);
+			tem = std::make_shared<CAppUserAccout>(key);
 		}
 	}else {
 		CScriptDBViewCache contractScriptTemp(*pScriptDBTip, true);
 		if (!contractScriptTemp.GetScriptAcc(script, key, *tem.get())) {
-			tem = make_shared<CAppUserAccout>(key);
+			tem = std::make_shared<CAppUserAccout>(key);
 		}
 	}
 

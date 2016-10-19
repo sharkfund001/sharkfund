@@ -322,13 +322,13 @@ CBaseParams &SysCfg() {
 
 		if (fRegTest) {
 			//LogPrint("spark", "In Reg Test Net\n");
-			pParams = make_shared<CRegTestParams>();
+			pParams = std::make_shared<CRegTestParams>();
 		} else if (fTestNet) {
 			//LogPrint("spark", "In Test Net\n");
-			pParams = make_shared<CTestNetParams>();
+			pParams = std::make_shared<CTestNetParams>();
 		} else {
 			//LogPrint("spark", "In Main Net\n");
-			pParams = make_shared<CMainParams>();
+			pParams = std::make_shared<CMainParams>();
 		}
 
 	}
@@ -339,7 +339,7 @@ CBaseParams &SysCfg() {
 //write for test code
 const CBaseParams &SysParamsMain() {
 	static std::shared_ptr<CBaseParams> pParams;
-	pParams = make_shared<CMainParams>();
+	pParams = std::make_shared<CMainParams>();
 	assert(pParams != NULL);
 	return *pParams.get();
 }
@@ -347,7 +347,7 @@ const CBaseParams &SysParamsMain() {
 //write for test code
 const CBaseParams &SysParamsTest() {
 	static std::shared_ptr<CBaseParams> pParams;
-	pParams = make_shared<CTestNetParams>();
+	pParams = std::make_shared<CTestNetParams>();
 	assert(pParams != NULL);
 	return *pParams.get();
 }
@@ -355,7 +355,7 @@ const CBaseParams &SysParamsTest() {
 //write for test code
 const CBaseParams &SysParamsReg() {
 	static std::shared_ptr<CBaseParams> pParams;
-	pParams = make_shared<CRegTestParams>();
+	pParams = std::make_shared<CRegTestParams>();
 	assert(pParams != NULL);
 	return *pParams.get();
 }
@@ -429,7 +429,7 @@ bool CBaseParams::CreateGenesisRewardTx(vector<std::shared_ptr<CBaseTransaction>
 				money = 400000000 * COIN;
 			}
 		}
-		shared_ptr<CRewardTransaction> pRewardTx = make_shared<CRewardTransaction>(ParseHex(vInitPubKey[i].c_str()),
+		shared_ptr<CRewardTransaction> pRewardTx = std::make_shared<CRewardTransaction>(ParseHex(vInitPubKey[i].c_str()),
 				money, 0);
 		pRewardTx->nVersion = nTxVersion1;
 		if (pRewardTx.get())

@@ -182,7 +182,7 @@ public:
 	void setAccUserId(const vector<unsigned char>& accUserId) {
 		mAccUserID = accUserId;
 	}
-
+	uint64_t GetAllFreezedValues();
 	IMPLEMENT_SERIALIZE
 	(
 		READWRITE(VARINT(llValues));

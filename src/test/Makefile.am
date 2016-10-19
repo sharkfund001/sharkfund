@@ -4,7 +4,6 @@ AM_CPPFLAGS += -I$(top_srcdir)/src
 
 bin_PROGRAMS = sharkfund_test
 
-BOOST_UNIT_TEST_FRAMEWORK_LIB = -lboost_unit_test_framework-mgw48-mt-s-1_55
 
 TESTS = test
 
